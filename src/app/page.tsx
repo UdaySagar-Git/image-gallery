@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import Image from "next/image";
+import { ImageModal } from "@/components/ImageModal";
 
-interface UnsplashImage {
+export interface UnsplashImage {
   id: string;
   slug: string;
   urls: {
@@ -25,6 +26,9 @@ interface UnsplashImage {
 
 const ImageGallery = () => {
   const [images, setImages] = useState<UnsplashImage[]>([]);
+  const [selectedImage, setSelectedImage] = useState<UnsplashImage | null>(
+    null
+  );
   const perPage = 25;
 
   const fetchImages = async () => {
@@ -53,7 +57,11 @@ const ImageGallery = () => {
         <ResponsiveMasonry columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}>
           <Masonry gutter="16px">
             {images.map((image) => (
-              <div key={image.id} className="cursor-pointer">
+              <div
+                key={image.id}
+                className="cursor-pointer"
+                onClick={() => setSelectedImage(image)}
+              >
                 <Image
                   src={image.urls.regular}
                   alt={image.alt_description}
@@ -65,6 +73,12 @@ const ImageGallery = () => {
             ))}
           </Masonry>
         </ResponsiveMasonry>
+      )}
+      {selectedImage && (
+        <ImageModal
+          image={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
       )}
     </div>
   );
