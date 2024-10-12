@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import Image from "next/image";
 import { ImageModal } from "@/components/ImageModal";
@@ -26,27 +26,48 @@ export interface UnsplashImage {
 
 const ImageGallery = () => {
   const [images, setImages] = useState<UnsplashImage[]>([]);
+  const [page, setPage] = useState(1);
   const [selectedImage, setSelectedImage] = useState<UnsplashImage | null>(
     null
   );
+  const loader = useRef(null);
+
   const perPage = 25;
 
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       const response = await fetch(
-        `https://api.unsplash.com/photos?page=1&per_page=${perPage}&client_id=${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`
+        `https://api.unsplash.com/photos?page=${page}&per_page=${perPage}&client_id=${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`
       );
       if (!response.ok) throw new Error("Failed to fetch images");
       const data: UnsplashImage[] = await response.json();
-      setImages(data);
+      setImages((prev) => [...prev, ...data]);
+      setPage((prev) => prev + 1);
     } catch (error) {
       console.error("Error fetching images:", error);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     fetchImages();
   }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchImages();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loader.current) {
+      observer.observe(loader.current);
+    }
+
+    return () => observer.disconnect();
+  }, [fetchImages]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -74,6 +95,7 @@ const ImageGallery = () => {
           </Masonry>
         </ResponsiveMasonry>
       )}
+      <div ref={loader} className="mt-4 h-10" />
       {selectedImage && (
         <ImageModal
           image={selectedImage}
