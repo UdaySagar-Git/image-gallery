@@ -118,6 +118,7 @@ const ImageGallery = () => {
                   </div>
                   <a
                     href={image.links.download}
+                    target="_blank"
                     className="rounded-full bg-white p-2 text-gray-300 opacity-75 transition-opacity duration-300 hover:opacity-100"
                     onClick={(e) => e.stopPropagation()}
                   >
