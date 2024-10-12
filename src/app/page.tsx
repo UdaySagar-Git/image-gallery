@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import Image from "next/image";
 import { ImageModal } from "@/components/ImageModal";
+import ImagePlaceholder from "@/components/ImagePlaceholder";
 
 export interface UnsplashImage {
   id: string;
@@ -27,6 +28,7 @@ export interface UnsplashImage {
 const ImageGallery = () => {
   const [images, setImages] = useState<UnsplashImage[]>([]);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<UnsplashImage | null>(
     null
   );
@@ -35,6 +37,7 @@ const ImageGallery = () => {
   const perPage = 25;
 
   const fetchImages = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await fetch(
         `https://api.unsplash.com/photos?page=${page}&per_page=${perPage}&client_id=${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`
@@ -45,6 +48,8 @@ const ImageGallery = () => {
       setPage((prev) => prev + 1);
     } catch (error) {
       console.error("Error fetching images:", error);
+    } finally {
+      setLoading(false);
     }
   }, [page]);
 
@@ -55,7 +60,7 @@ const ImageGallery = () => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && !loading) {
           fetchImages();
         }
       },
@@ -67,34 +72,36 @@ const ImageGallery = () => {
     }
 
     return () => observer.disconnect();
-  }, [fetchImages]);
+  }, [fetchImages, loading]);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-8 text-center text-4xl font-bold text-gray-800">
         Image Gallery
       </h1>
-      {images.length > 0 && (
-        <ResponsiveMasonry columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}>
-          <Masonry gutter="16px">
-            {images.map((image) => (
-              <div
-                key={image.id}
-                className="cursor-pointer"
-                onClick={() => setSelectedImage(image)}
-              >
-                <Image
-                  src={image.urls.regular}
-                  alt={image.alt_description}
-                  className="rounded-lg shadow-md"
-                  width={image.width}
-                  height={image.height}
-                />
-              </div>
+      <ResponsiveMasonry columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}>
+        <Masonry gutter="16px">
+          {images?.map((image) => (
+            <div
+              key={image.id}
+              className="cursor-pointer bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300 transition-transform hover:scale-105"
+              onClick={() => setSelectedImage(image)}
+            >
+              <Image
+                src={image.urls.regular}
+                alt={image.alt_description}
+                className="rounded-lg shadow-md"
+                width={image.width}
+                height={image.height}
+              />
+            </div>
+          ))}
+          {loading &&
+            Array.from({ length: perPage }).map((_, index) => (
+              <ImagePlaceholder key={index} />
             ))}
-          </Masonry>
-        </ResponsiveMasonry>
-      )}
+        </Masonry>
+      </ResponsiveMasonry>
       <div ref={loader} className="mt-4 h-10" />
       {selectedImage && (
         <ImageModal
