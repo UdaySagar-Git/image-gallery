@@ -38,6 +38,8 @@ const ImageGallery = () => {
 
   const fetchImages = useCallback(async () => {
     setLoading(true);
+    // dummy loading
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     try {
       const response = await fetch(
         `https://api.unsplash.com/photos?page=${page}&per_page=${perPage}&client_id=${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`
